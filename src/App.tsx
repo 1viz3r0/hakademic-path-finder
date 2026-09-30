@@ -187,6 +187,27 @@ export default function App() {
 
   return (
     <div className={`min-h-screen ${isLightTheme ? 'bg-[#ADD8E6]' : 'bg-slate-950'} ${isLightTheme ? 'text-slate-900' : 'text-slate-100'} flex flex-col font-sans selection:bg-indigo-600 selection:text-white`}>
+      {/* Theme Toggle Button */}
+      <button
+        onClick={toggleTheme}
+        className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm border border-white/50 rounded-full p-2 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white/25 transition-all ease-in-out"
+        aria-label={isLightTheme ? 'Switch to dark theme' : 'Switch to light theme'}
+      >
+        <svg
+          className={isLightTheme ? 'text-slate-900' : 'text-slate-900'}
+          width={24}
+          height={24}
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          {isLightTheme ? (
+            <path d="M20.9 9.9A12.9 12.9 0 0 1 3.1 1.2C1.6 1.2.1 2.4.1 4c0 2.3.8 5.2 2.1 7.3L1.2 23c.8.4 2 1 3.4 1h13.4c1.4 0 2.5-.7 3.4-1.1l.9-5.4a12.94 12.94 0 0 1 2.2-5.3zM9.8 11.8l1.7 4.1 5.3-3.2L9.8 11.8zm-3.1.8l-1.6 3.8 3.2-1.8L6.7 12.6z" />
+          ) : (
+            <path d="M20.9 9.9A12.9 12.9 0 0 1 3.1 1.2C1.6 1.2.1 2.4.1 4c0 2.3.8 5.2 2.1 7.3L1.2 23c.8.4 2 1 3.4 1h13.4c1.4 0 2.5-.7 3.4-1.1l.9-5.4a12.94 12.94 0 0 1 2.2-5.3zM9.8 11.8l1.7 4.1 5.3-3.2L9.8 11.8zm-3.1.8l-1.6 3.8 3.2-1.8L6.7 12.6z" />
+          )}
+        </svg>
+      </button>
+
       {/* Global Application Header */}
       <Header
         profile={profile}
@@ -283,26 +304,6 @@ export default function App() {
       <footer className="border-t border-slate-900 bg-slate-950/80 py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              className="bg-white/90 backdrop-blur-sm border border-white/50 rounded-full p-2 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white/25 transition-all ease-in-out"
-              aria-label={isLightTheme ? 'Switch to dark theme' : 'Switch to light theme'}
-              style={{ flexShrink: 0 }}
-            >
-              <svg
-                className={isLightTheme ? 'text-slate-900' : 'text-slate-900'}
-                width={20}
-                height={20}
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                {isLightTheme ? (
-                  <path d="M20.9 9.9A12.9 12.9 0 0 1 3.1 1.2C1.6 1.2.1 2.4.1 4c0 2.3.8 5.2 2.1 7.3L1.2 23c.8.4 2 1 3.4 1h13.4c1.4 0 2.5-.7 3.4-1.1l.9-5.4a12.94 12.94 0 0 1 2.2-5.3zM9.8 11.8l1.7 4.1 5.3-3.2L9.8 11.8zm-3.1.8l-1.6 3.8 3.2-1.8L6.7 12.6z" />
-                ) : (
-                  <path d="M20.9 9.9A12.9 12.9 0 0 1 3.1 1.2C1.6 1.2.1 2.4.1 4c0 2.3.8 5.2 2.1 7.3L1.2 23c.8.4 2 1 3.4 1h13.4c1.4 0 2.5-.7 3.4-1.1l.9-5.4a12.94 12.94 0 0 1 2.2-5.3zM9.8 11.8l1.7 4.1 5.3-3.2L9.8 11.8zm-3.1.8l-1.6 3.8 3.2-1.8L6.7 12.6z" />
-                )}
-              </svg>
-            </button>
             <HackademicLogo size={28} showText={false} />
             <span className="font-bold text-slate-300 tracking-wider">HACKADEMIC</span>
             <span className="text-slate-600">·</span>
