@@ -98,7 +98,7 @@ app.post('/api/jobs/live-search', async (req, res) => {
     const exp = experience && experience !== 'All' ? experience : 'Entry / Fresher to Experienced';
     const mode = workMode && workMode !== 'All' ? workMode : 'Remote / Hybrid / On-site';
 
-    const searchPrompt = `Search the live web for 8 REAL, currently ACTIVE job listings posted within the last 30 days on LinkedIn Jobs, Naukri, Indeed, Internshala, Unstop, Wellfound, or official company career portals matching:
+    const searchPrompt = `Search the live web for ACTIVE REAL job listings on LinkedIn Jobs, Naukri, Indeed, Internshala, Unstop, Wellfound, official company career portals, and any other genuine job platforms matching:
 Domain / Specialization: "${targetDomain}"
 Technical Skill Track: "${technicalSkill || 'General'}"
 Education Level: "${education || 'UG'}" (Degree: "${degree || 'Relevant Degree'}")
@@ -108,15 +108,10 @@ Location Preference: "${loc}"
 Work Mode: "${mode}"
 
 STRICT REAL-WORLD ACCURACY RULES:
-1. Do NOT make up fictional jobs or placeholder URLs. Look up genuine current job postings from real employers (e.g. Google, Microsoft, Amazon, Cisco, Razorpay, Swiggy, TCS, Infosys, Wipro, Airtel, Tata, Cognizant, startups on Wellfound/Unstop, internships on Internshala, or listings on LinkedIn/Naukri/Indeed).
-2. The applyUrl MUST be a real, functioning URL (either the direct job listing link or the verified search query link on that platform that immediately opens real matching openings for this job).
-3. Do NOT include expired, archived, or closed postings. Confirm the job is currently open for applications.
-4. If domain is Ethical Hacking / Penetration Testing, jobs must be for Ethical Hacker, Penetration Tester, VAPT, Security Testing.
-5. If domain is SOC Analyst, jobs must be for SOC Analyst, SIEM, Incident Detection.
-6. If domain is Frontend Development, jobs must be for Frontend, React, UI Engineer.
-7. If domain is Backend Development, jobs must be for Backend, Node.js, Python, Java, Go.
-8. If domain is Data Analytics, jobs must be for Data Analyst, Power BI, SQL, Reporting.
-9. If education is 12th or Diploma, search for Diploma Engineer Trainee (DET), apprenticeships, junior technician, customer operations, entry-level office/support openings.
+1. Do NOT make up fictional jobs or placeholder URLs. Look up genuine current job postings from real employers.
+2. The applyUrl MUST be a real, functioning URL.
+3. Do NOT include expired, archived, or closed postings.
+4. If education is 12th or Diploma, search for Diploma Engineer Trainee (DET), apprenticeships, junior technician, customer operations, entry-level office/support openings.
 
 Return ONLY a valid JSON array of objects conforming to this format (no markdown code blocks, just raw JSON array):
 [
@@ -133,9 +128,9 @@ Return ONLY a valid JSON array of objects conforming to this format (no markdown
     "jobType": "Full-time" | "Contract" | "Internship" | "Trainee",
     "salary": "Realistic compensation or ₹ LPA range / month",
     "postedDate": "e.g. Today (3 hours ago) or 2 days ago or 5 days ago",
-    "postedDaysAgo": 0, // 0 for today, 1-3 for within 3 days, 4-7 for within 7 days, 8-30 for within 30 days
+    "postedDaysAgo": 0,
     "applicationDeadline": "Application deadline or 'Immediate / Rolling hiring'",
-    "source": "LinkedIn" | "Internshala" | "Naukri" | "Indeed" | "Unstop" | "Wellfound" | "Official Portal",
+    "source": "Platform name (e.g. LinkedIn, Naukri, Indeed, Internshala, Wellfound, Unstop, Company Portal, etc.)",
     "applyUrl": "Direct application URL or direct portal search link",
     "isVerified": true,
     "description": "2-3 sentences summarizing key job purpose and requirements.",
@@ -182,30 +177,14 @@ Return ONLY a valid JSON array of objects conforming to this format (no markdown
           daysAgo = 20;
         }
 
-        // Validate source
-        const validSources = ['LinkedIn', 'Internshala', 'Naukri', 'Indeed', 'Unstop', 'Wellfound', 'Official Portal'];
-        let source = job.source;
-        if (!validSources.includes(source)) {
-          if (String(job.applyUrl).includes('linkedin.com')) source = 'LinkedIn';
-          else if (String(job.applyUrl).includes('naukri.com')) source = 'Naukri';
-          else if (String(job.applyUrl).includes('indeed.com')) source = 'Indeed';
-          else if (String(job.applyUrl).includes('internshala.com')) source = 'Internshala';
-          else if (String(job.applyUrl).includes('unstop.com')) source = 'Unstop';
-          else if (String(job.applyUrl).includes('wellfound.com') || String(job.applyUrl).includes('angel.co')) source = 'Wellfound';
-          else source = 'Official Portal';
-        }
+        // Preserve source from API, no restriction
+        const source = job.source || 'Official Portal';
 
         // Generate reliable apply link if empty or invalid
         let applyUrl = job.applyUrl;
         if (!applyUrl || !applyUrl.startsWith('http')) {
-          const encodedTitle = encodeURIComponent(`${job.title} ${job.company}`);
-          if (source === 'LinkedIn') applyUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodedTitle}`;
-          else if (source === 'Naukri') applyUrl = `https://www.naukri.com/${encodeURIComponent(job.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}-jobs`;
-          else if (source === 'Indeed') applyUrl = `https://in.indeed.com/jobs?q=${encodedTitle}`;
-          else if (source === 'Internshala') applyUrl = `https://internshala.com/jobs/${encodeURIComponent(job.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}-jobs`;
-          else if (source === 'Unstop') applyUrl = `https://unstop.com/jobs?searchTerm=${encodedTitle}`;
-          else if (source === 'Wellfound') applyUrl = `https://wellfound.com/jobs?query=${encodedTitle}`;
-          else applyUrl = `https://www.google.com/search?q=${encodeURIComponent(`${job.company} ${job.title} career jobs apply online active`)}`;
+          const encodedTitle = encodeURIComponent(`${job.title} ${job.company} ${targetDomain}`);
+          applyUrl = `https://www.google.com/search?q=${encodeURIComponent(`${job.company} ${job.title} career hiring apply`)}`;
         }
 
         return {
@@ -216,7 +195,7 @@ Return ONLY a valid JSON array of objects conforming to this format (no markdown
           location: job.location || loc,
           workMode: job.workMode || mode,
           experienceRequired: job.experienceRequired || exp,
-          educationRequired: job.educationRequired || (education === '12TH' ? '12th Pass' : education === 'DIPLOMA' ? 'Diploma' : `${degree || 'Bachelor’s / Master’s'}`),
+          educationRequired: job.educationRequired || (education === '12TH' ? '12th Pass' : education === 'DIPLOMA' ? 'Diploma' : `${degree || 'Bachelor\u2019s / Master\u2019s'}`),
           skills: Array.isArray(job.skills) && job.skills.length > 0 ? job.skills : ['Problem Solving', 'Domain Expertise', 'Team Collaboration'],
           jobType: job.jobType || 'Full-time',
           salary: job.salary || 'Competitive Industry Standard',

@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import {
   JobOpportunity,
-  JobSource,
   PostedTimeFilter,
   UserCareerProfile,
   WorkMode,
@@ -30,7 +29,6 @@ import { JobDetailModal } from './JobDetailModal';
 import { TECHNICAL_SKILLS } from '../data/careerData';
 import { buildPlatformSearchUrl } from '../services/jobPlatformLinks';
 import { fetchLiveGroundedJobs } from '../services/liveJobService';
-import { getSalaryMatchPriority } from '../utils/salaryUtils';
 
 interface JobResultsViewProps {
   profile: UserCareerProfile;
@@ -61,16 +59,21 @@ export const JobResultsView: React.FC<JobResultsViewProps> = ({
   const [liveStatusText, setLiveStatusText] = useState<string | null>(null);
   const hasAutoFetched = useRef<string | null>(null);
 
-  // Derive domain name and skill name
+  // Derive domain names and skill name
   const currentSkill = TECHNICAL_SKILLS.find((s) => s.id === profile.technicalSkill);
-  const currentDomainObj = currentSkill?.domains.find((d) => d.id === profile.domain);
-  const domainDisplayName =
-    currentDomainObj?.name ||
-    (profile.education === '12TH'
-      ? '12th Pass Entry Level & Trainee Roles'
+  const domainIds = profile.domain
+    ? Array.isArray(profile.domain) ? profile.domain : [profile.domain]
+    : [];
+  const domainObjs = domainIds
+    .map((dId) => currentSkill?.domains.find((d) => d.id === dId))
+    .filter(Boolean);
+  const domainDisplayNames = domainObjs.length > 0
+    ? domainObjs.map((d) => d!.name)
+    : (profile.education === '12TH'
+      ? ['12th Pass Entry Level & Trainee Roles']
       : profile.education === 'DIPLOMA'
-      ? 'Diploma Engineer Trainee & Technical Roles'
-      : 'General Tech Track');
+      ? ['Diploma Engineer Trainee & Technical Roles']
+      : ['General Tech Track']);
 
   // Trigger live search on first mount or domain change
   useEffect(() => {
@@ -84,15 +87,15 @@ export const JobResultsView: React.FC<JobResultsViewProps> = ({
   const handleFetchLiveJobs = async (userInitiated = true) => {
     setIsLoadingLive(true);
     setLiveStatusText(
-      'Fetching live verified job postings from LinkedIn, Naukri, Indeed, Internshala, Unstop & official company portals...'
+      'Fetching live verified job postings from active portals...'
     );
 
     try {
-      const result = await fetchLiveGroundedJobs(profile, domainDisplayName);
+      const result = await fetchLiveGroundedJobs(profile, domainDisplayNames[0] || 'Technology Careers');
       if (result.success && result.jobs.length > 0) {
         onAppendLiveJobs(result.jobs);
         setLiveStatusText(
-          `Retrieved ${result.jobs.length} active verified openings matching "${domainDisplayName}".`
+          `Retrieved ${result.jobs.length} active verified openings matching your specializations.`
         );
       } else {
         setLiveStatusText(
@@ -138,34 +141,29 @@ export const JobResultsView: React.FC<JobResultsViewProps> = ({
       return true;
     });
 
-    const educationMatched = eligibleJobs.filter((job) => {
-      if (!profile.education) return true;
-      return job.educationLevel.includes(profile.education);
-    });
-
-    const salaryMatched = (educationMatched.length > 0 ? educationMatched : eligibleJobs).filter((job) => {
-      if (!profile.expectedSalary) return true;
-      return getSalaryMatchPriority(job.salary, profile.expectedSalary).score >= 1.5;
-    });
-
-    const rankedJobs = salaryMatched.length > 0 ? salaryMatched : educationMatched.length > 0 ? educationMatched : eligibleJobs;
-
-    // 2. Strict Domain / Specialization match (e.g. Penetration Testing, React.js, Power BI)
-    if (profile.domain || domainDisplayName) {
-      const targetDomainId = (profile.domain || '').toLowerCase();
-      const targetTitle = (domainDisplayName || '').toLowerCase();
-
-      const specificMatches = rankedJobs.filter((job) => {
-        if (job.domainId && job.domainId.toLowerCase() === targetDomainId) return true;
-        const jTitle = job.title.toLowerCase();
-        const jSkills = job.skills.map((s) => s.toLowerCase());
-        const jDesc = job.description.toLowerCase();
-        return (
-          (targetTitle && jTitle.includes(targetTitle)) ||
-          (targetTitle && targetTitle.includes(jTitle)) ||
-          jSkills.some((s) => (targetTitle && targetTitle.includes(s)) || s.includes(targetTitle)) ||
-          (targetTitle && jDesc.includes(targetTitle))
-        );
+    // 2. Domain / Specialization match (match any selected domain)
+    if (domainIds.length > 0) {
+      const specificMatches = eligibleJobs.filter((job) => {
+        // Check if job matches any of the selected domain IDs
+        for (const dId of domainIds) {
+          if (job.domainId && job.domainId.toLowerCase() === dId.toLowerCase()) return true;
+          // Also check each display name
+          for (const dName of domainDisplayNames) {
+            const targetTitle = dName.toLowerCase();
+            const jTitle = job.title.toLowerCase();
+            const jSkills = job.skills.map((s) => s.toLowerCase());
+            const jDesc = job.description.toLowerCase();
+            if (
+              jTitle.includes(targetTitle) ||
+              targetTitle.includes(jTitle) ||
+              jSkills.some((s) => targetTitle.includes(s) || s.includes(targetTitle)) ||
+              jDesc.includes(targetTitle)
+            ) {
+              return true;
+            }
+          }
+        }
+        return false;
       });
 
       if (specificMatches.length > 0) {
@@ -173,8 +171,8 @@ export const JobResultsView: React.FC<JobResultsViewProps> = ({
       }
     }
 
-    return rankedJobs;
-  }, [jobs, profile.education, profile.domain, profile.technicalSkill, profile.expectedSalary, domainDisplayName]);
+    return eligibleJobs;
+  }, [jobs, profile.education, profile.domain, profile.technicalSkill, domainIds, domainDisplayNames]);
 
   // Further apply user's refine filters
   const filteredJobs = useMemo(() => {
@@ -235,16 +233,15 @@ export const JobResultsView: React.FC<JobResultsViewProps> = ({
     return [...filteredJobs].sort((a, b) => a.postedDaysAgo - b.postedDaysAgo);
   }, [filteredJobs]);
 
-  const sourcesList: string[] = [
-    'All Sources',
-    'LinkedIn',
-    'Naukri',
-    'Indeed',
-    'Internshala',
-    'Unstop',
-    'Wellfound',
-    'Official Portal',
-  ];
+  // Collect unique sources from available jobs
+  const sourcesList: string[] = useMemo(() => {
+    const sources = new Set<string>();
+    sources.add('All Sources');
+    jobs.forEach((job) => {
+      if (job.source) sources.add(job.source);
+    });
+    return Array.from(sources);
+  }, [jobs]);
 
   const locationsList: string[] = [
     'All Locations',
@@ -306,12 +303,14 @@ export const JobResultsView: React.FC<JobResultsViewProps> = ({
               </>
             )}
 
-            {profile.domain && (
-              <>
-                <span className="text-slate-600 font-normal">/</span>
-                <span className="text-emerald-400">{domainDisplayName}</span>
-              </>
-            )}
+            {domainObjs.length > 0 && domainObjs.map((d, i) => (
+              d && (
+                <React.Fragment key={d.id}>
+                  {i > 0 && <span className="text-slate-500 font-normal">,</span>}
+                  <span className="text-emerald-400">{d.name}</span>
+                </React.Fragment>
+              )
+            ))}
           </div>
         </div>
 
@@ -353,8 +352,8 @@ export const JobResultsView: React.FC<JobResultsViewProps> = ({
         <div className="flex items-start gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
           <div>
-            <span className="font-semibold text-slate-200 block">3. Single-Domain Match</span>
-            <span className="text-slate-400 text-[11px]">Tailored to {domainDisplayName}</span>
+            <span className="font-semibold text-slate-200 block">3. Multi-Domain Match</span>
+            <span className="text-slate-400 text-[11px]">Tailored to your {domainObjs.length} specialization{domainObjs.length !== 1 ? 's' : ''}</span>
           </div>
         </div>
         <div className="flex items-start gap-2">
@@ -381,22 +380,22 @@ export const JobResultsView: React.FC<JobResultsViewProps> = ({
         </div>
       )}
 
-      {/* 1-Click Direct Portal Search Launcher */}
+      {/* Direct Portal Search Launcher */}
       <div className="mb-6 p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/80">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
-            Search Live On Official Partner Platforms:
+            Search Live On Partner Platforms:
           </span>
           <span className="text-[11px] text-slate-500 hidden sm:inline">
-            Directly searches for "{domainDisplayName}"
+            Directly searches for your specializations
           </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {(['LinkedIn', 'Naukri', 'Indeed', 'Internshala', 'Unstop', 'Wellfound', 'Official Portal'] as JobSource[]).map(
+          {(['LinkedIn', 'Naukri', 'Indeed', 'Internshala', 'Unstop', 'Wellfound', 'Official Portal'] as const).map(
             (source) => {
               const url = buildPlatformSearchUrl(source, {
-                domainTitle: domainDisplayName,
+                domainTitle: domainDisplayNames[0] || 'Technology Careers',
                 location: selectedLocation,
               });
 
@@ -471,7 +470,7 @@ export const JobResultsView: React.FC<JobResultsViewProps> = ({
               ))}
             </select>
 
-            {/* Source */}
+            {/* Source - dynamically built from available jobs */}
             <select
               value={selectedSource}
               onChange={(e) => setSelectedSource(e.target.value)}
@@ -486,7 +485,7 @@ export const JobResultsView: React.FC<JobResultsViewProps> = ({
           </div>
         </div>
 
-        {/* Priority Date Filter Tabs (Today, Within 3 days, Within 7 days, Within 30 days) */}
+        {/* Priority Date Filter Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/60">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 mr-1 flex items-center gap-1">
@@ -585,7 +584,7 @@ export const JobResultsView: React.FC<JobResultsViewProps> = ({
           <Info className="w-10 h-10 text-slate-600 mx-auto mb-3" />
           <h3 className="text-base font-bold text-white">No active listings match your current filters</h3>
           <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-            Try adjusting your location, experience, or posted date filter, or refresh live feeds directly from LinkedIn and Naukri.
+            Try adjusting your location, experience, or posted date filter, or refresh live feeds from partner portals.
           </p>
           <div className="mt-4 flex items-center justify-center gap-3">
             <button

@@ -20,25 +20,17 @@ import { EducationStep } from './components/EducationStep';
 import { DegreeStep } from './components/DegreeStep';
 import { TechnicalSkillStep } from './components/TechnicalSkillStep';
 import { DomainStep } from './components/DomainStep';
-import { SalaryStep } from './components/SalaryStep';
 import { JobResultsView } from './components/JobResultsView';
-import { HackademicLogo } from './components/HackademicLogo';
-import { ExpectedSalaryRange } from './types';
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState<FlowStep>('age');
-  const [isLightTheme, setIsLightTheme] = useState(false);
-
-  const toggleTheme = () => {
-    setIsLightTheme(!isLightTheme);
-  };
+  const [domains, setDomains] = useState<string[]>([]);
   const [profile, setProfile] = useState<UserCareerProfile>({
     age: null,
     education: null,
     degree: null,
     technicalSkill: null,
     domain: null,
-    expectedSalary: null,
     experience: 'All',
     preferredLocation: 'All Locations',
     workMode: 'All',
@@ -61,7 +53,6 @@ export default function App() {
       degree: null,
       technicalSkill: null,
       domain: null,
-      expectedSalary: null,
     }));
   };
 
@@ -89,12 +80,10 @@ export default function App() {
 
   // Handlers for Technical Skill selection
   const handleSelectSkill = (skillId: TechnicalSkillId) => {
-    // When switching technical skill, reset domain so only 1 domain of new skill is chosen
     setProfile((prev) => ({
       ...prev,
       technicalSkill: skillId,
       domain: null,
-      expectedSalary: null,
     }));
   };
 
@@ -104,29 +93,41 @@ export default function App() {
     }
   };
 
-  // Handlers for Domain selection (Enforcing SINGLE domain selection)
+  // Handlers for Domain selection (Max 3 domains)
   const handleSelectDomain = (domainId: string) => {
-    // Sets only one domain. Clicking another domain replaces the previous one.
-    setProfile((prev) => ({
-      ...prev,
-      domain: domainId,
-      expectedSalary: null,
-    }));
+    setProfile((prev) => {
+      const currentDomains = prev.domain
+        ? Array.isArray(prev.domain) ? prev.domain : [prev.domain]
+        : [];
+
+      // Toggle: remove if already selected
+      if (currentDomains.includes(domainId)) {
+        const newDomains = currentDomains.filter(d => d !== domainId);
+        return {
+          ...prev,
+          domain: newDomains.length === 1 ? newDomains[0] : newDomains.length > 0 ? newDomains : null,
+        };
+      }
+
+      // Max 3 enforcement
+      if (currentDomains.length >= 3) {
+        return prev;
+      }
+
+      // Add new domain
+      const newDomains = [...currentDomains, domainId];
+      return {
+        ...prev,
+        domain: newDomains.length === 1 ? newDomains[0] : newDomains,
+      };
+    });
   };
 
   const handleDomainContinue = () => {
-    if (profile.domain) {
-      setCurrentStep('salary');
-    }
-  };
-
-  // Handlers for Salary selection
-  const handleSelectSalary = (salaryId: ExpectedSalaryRange) => {
-    setProfile((prev) => ({ ...prev, expectedSalary: salaryId }));
-  };
-
-  const handleSalaryContinue = () => {
-    if (profile.expectedSalary) {
+    const currentDomains = profile.domain
+      ? Array.isArray(profile.domain) ? profile.domain : [profile.domain]
+      : [];
+    if (currentDomains.length > 0) {
       setCurrentStep('jobs');
     }
   };
@@ -145,16 +146,14 @@ export default function App() {
     if (isDirect) {
       if (targetStep === 'skill') return Boolean(profile.education);
       if (targetStep === 'domain') return Boolean(profile.education && profile.technicalSkill);
-      if (targetStep === 'salary') return Boolean(profile.education && profile.technicalSkill && profile.domain);
-      if (targetStep === 'jobs') return Boolean(profile.education && profile.technicalSkill && profile.domain && profile.expectedSalary);
+      if (targetStep === 'jobs') return Boolean(profile.education && profile.technicalSkill && profile.domain);
       return false;
     }
 
     if (targetStep === 'degree') return Boolean(profile.education);
     if (targetStep === 'skill') return Boolean(profile.education && profile.degree);
     if (targetStep === 'domain') return Boolean(profile.education && profile.degree && profile.technicalSkill);
-    if (targetStep === 'salary') return Boolean(profile.education && profile.degree && profile.technicalSkill && profile.domain);
-    if (targetStep === 'jobs') return Boolean(profile.education && profile.degree && profile.technicalSkill && profile.domain && profile.expectedSalary);
+    if (targetStep === 'jobs') return Boolean(profile.education && profile.degree && profile.technicalSkill && profile.domain);
 
     return false;
   };
@@ -167,7 +166,6 @@ export default function App() {
       degree: null,
       technicalSkill: null,
       domain: null,
-      expectedSalary: null,
       experience: 'All',
       preferredLocation: 'All Locations',
       workMode: 'All',
@@ -186,28 +184,7 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen ${isLightTheme ? 'bg-[#ADD8E6]' : 'bg-slate-950'} ${isLightTheme ? 'text-slate-900' : 'text-slate-100'} flex flex-col font-sans selection:bg-indigo-600 selection:text-white`}>
-      {/* Theme Toggle Button */}
-      <button
-        onClick={toggleTheme}
-        className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm border border-white/50 rounded-full p-2 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white/25 transition-all ease-in-out"
-        aria-label={isLightTheme ? 'Switch to dark theme' : 'Switch to light theme'}
-      >
-        <svg
-          className={isLightTheme ? 'text-slate-900' : 'text-slate-900'}
-          width={24}
-          height={24}
-          viewBox="0 0 24 24"
-          fill="currentColor"
-        >
-          {isLightTheme ? (
-            <path d="M20.9 9.9A12.9 12.9 0 0 1 3.1 1.2C1.6 1.2.1 2.4.1 4c0 2.3.8 5.2 2.1 7.3L1.2 23c.8.4 2 1 3.4 1h13.4c1.4 0 2.5-.7 3.4-1.1l.9-5.4a12.94 12.94 0 0 1 2.2-5.3zM9.8 11.8l1.7 4.1 5.3-3.2L9.8 11.8zm-3.1.8l-1.6 3.8 3.2-1.8L6.7 12.6z" />
-          ) : (
-            <path d="M20.9 9.9A12.9 12.9 0 0 1 3.1 1.2C1.6 1.2.1 2.4.1 4c0 2.3.8 5.2 2.1 7.3L1.2 23c.8.4 2 1 3.4 1h13.4c1.4 0 2.5-.7 3.4-1.1l.9-5.4a12.94 12.94 0 0 1 2.2-5.3zM9.8 11.8l1.7 4.1 5.3-3.2L9.8 11.8zm-3.1.8l-1.6 3.8 3.2-1.8L6.7 12.6z" />
-          )}
-        </svg>
-      </button>
-
+    <div className="min-h-screen bg-[#0D1B2A] text-slate-100 flex flex-col font-sans selection:bg-indigo-600 selection:text-white">
       {/* Global Application Header */}
       <Header
         profile={profile}
@@ -272,20 +249,10 @@ export default function App() {
         {currentStep === 'domain' && profile.technicalSkill && (
           <DomainStep
             skillId={profile.technicalSkill}
-            selectedDomainId={profile.domain}
+            selectedDomainIds={Array.isArray(profile.domain) ? profile.domain : profile.domain ? [profile.domain] : []}
             onSelectDomain={handleSelectDomain}
             onBack={() => setCurrentStep('skill')}
             onContinue={handleDomainContinue}
-          />
-        )}
-
-        {currentStep === 'salary' && (
-          <SalaryStep
-            selectedSalary={profile.expectedSalary}
-            onSelectSalary={handleSelectSalary}
-            onBack={() => setCurrentStep('domain')}
-            onContinue={handleSalaryContinue}
-            profile={profile}
           />
         )}
 
@@ -293,29 +260,22 @@ export default function App() {
           <JobResultsView
             profile={profile}
             jobs={jobs}
-            onBack={() => setCurrentStep('salary')}
+            onBack={() => setCurrentStep('domain')}
             onEditProfile={() => setCurrentStep('age')}
             onAppendLiveJobs={handleAppendLiveJobs}
           />
         )}
       </main>
 
-      {/* Global Compact Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950/80 py-6 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <HackademicLogo size={28} showText={false} />
-            <span className="font-bold text-slate-300 tracking-wider">HACKADEMIC</span>
-            <span className="text-slate-600">·</span>
-            <span>Real-time verified job listings aggregated directly from LinkedIn, Naukri, Indeed, Internshala, Unstop & official company career sites.</span>
-          </div>
-          <div className="flex items-center gap-4 text-slate-400 flex-shrink-0">
-            <span>Verified Active Listings</span>
-            <span>·</span>
-            <span>Zero Expired Postings</span>
-          </div>
-        </div>
-      </footer>
+      {/* Terms and Conditions */}
+      <div className="text-center py-6 px-4">
+        <button
+          onClick={() => window.open('/terms', '_blank')}
+          className="text-xs text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2"
+        >
+          Terms and Conditions
+        </button>
+      </div>
     </div>
   );
 }

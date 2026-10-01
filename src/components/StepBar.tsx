@@ -24,16 +24,14 @@ export const StepBar: React.FC<StepBarProps> = ({
         { id: 'degree', label: 'Degree', number: 3 },
         { id: 'skill', label: 'Technical Skill', number: 4 },
         { id: 'domain', label: 'Specialization', number: 5 },
-        { id: 'salary', label: 'Expected Salary', number: 6 },
-        { id: 'jobs', label: 'Matching Jobs', number: 7 },
+        { id: 'jobs', label: 'Matching Jobs', number: 6 },
       ]
     : [
         { id: 'age', label: 'Age', number: 1 },
         { id: 'education', label: 'Education', number: 2 },
         { id: 'skill', label: 'Technical Skill', number: 3 },
         { id: 'domain', label: 'Specialization', number: 4 },
-        { id: 'salary', label: 'Expected Salary', number: 5 },
-        { id: 'jobs', label: 'Matching Jobs', number: 6 },
+        { id: 'jobs', label: 'Matching Jobs', number: 5 },
       ];
 
   const currentStepIndex = stepsConfig.findIndex((s) => s.id === currentStep);

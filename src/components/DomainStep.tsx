@@ -5,7 +5,7 @@ import { TechnicalSkillId } from '../types';
 
 interface DomainStepProps {
   skillId: TechnicalSkillId;
-  selectedDomainId: string | null;
+  selectedDomainIds: string[];
   onSelectDomain: (domainId: string) => void;
   onBack: () => void;
   onContinue: () => void;
@@ -13,7 +13,7 @@ interface DomainStepProps {
 
 export const DomainStep: React.FC<DomainStepProps> = ({
   skillId,
-  selectedDomainId,
+  selectedDomainIds,
   onSelectDomain,
   onBack,
   onContinue,
@@ -34,7 +34,7 @@ export const DomainStep: React.FC<DomainStepProps> = ({
     );
   }, [domains, searchQuery]);
 
-  const selectedDomainObj = domains.find((d) => d.id === selectedDomainId);
+  const selectedDomainObjs = domains.filter((d) => selectedDomainIds.includes(d.id));
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
@@ -49,9 +49,13 @@ export const DomainStep: React.FC<DomainStepProps> = ({
         </button>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-rose-400 font-medium bg-rose-950/50 border border-rose-900/50 px-2.5 py-1 rounded-md flex items-center gap-1">
+          <span className={`text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1 border ${
+            selectedDomainIds.length >= 3
+              ? 'text-amber-400 bg-amber-950/50 border-amber-900/50'
+              : 'text-indigo-400 bg-indigo-950/50 border-indigo-900/50'
+          }`}>
             <Lock className="w-3 h-3" />
-            <span>Select Exactly 1 Specialization</span>
+            <span>Select up to 3 Specializations ({selectedDomainIds.length}/3)</span>
           </span>
         </div>
       </div>
@@ -62,10 +66,10 @@ export const DomainStep: React.FC<DomainStepProps> = ({
           <span>{currentSkill?.name} Specializations</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-          Select Your Domain Specialization
+          Select Your Domain Specializations
         </h1>
         <p className="mt-2 text-sm text-slate-400 max-w-2xl mx-auto">
-          Choose the specific domain specialization within <strong className="text-slate-200">{currentSkill?.name}</strong>. Job recommendations will be specifically matched to this track.
+          Choose up to 3 specializations within <strong className="text-slate-200">{currentSkill?.name}</strong>. Job recommendations will be matched to all selected tracks.
         </p>
 
         {/* Filter bar */}
@@ -87,7 +91,7 @@ export const DomainStep: React.FC<DomainStepProps> = ({
       {/* Grid of Domains for the selected Skill */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredDomains.map((domain) => {
-          const isSelected = selectedDomainId === domain.id;
+          const isSelected = selectedDomainIds.includes(domain.id);
 
           return (
             <div
@@ -96,6 +100,8 @@ export const DomainStep: React.FC<DomainStepProps> = ({
               className={`p-5 rounded-2xl border transition-all text-left flex flex-col justify-between cursor-pointer group ${
                 isSelected
                   ? 'bg-slate-800/90 border-indigo-500 shadow-xl shadow-indigo-500/15 ring-2 ring-indigo-500/50'
+                  : selectedDomainIds.length >= 3
+                  ? 'bg-slate-900/60 border-slate-800 opacity-50 cursor-not-allowed'
                   : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-800/40'
               }`}
             >
@@ -111,10 +117,9 @@ export const DomainStep: React.FC<DomainStepProps> = ({
                         <CheckCircle2 className="w-3 h-3" />
                         Selected
                       </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-500 group-hover:text-slate-400">
-                        Select
-                      </span>
+                    ) : null}
+                    {selectedDomainIds.length >= 3 && !isSelected && (
+                      <span className="text-[10px] text-amber-500/70">Max 3</span>
                     )}
                   </div>
                 </div>
@@ -154,10 +159,10 @@ export const DomainStep: React.FC<DomainStepProps> = ({
 
               <div className="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs">
                 <span className="text-slate-500 text-[10px]">
-                  {isSelected ? 'Active specialization' : 'Click to activate'}
+                  {isSelected ? 'Active specialization' : selectedDomainIds.length >= 3 ? 'Max limit reached' : 'Click to select'}
                 </span>
                 <span className={`font-semibold text-xs ${isSelected ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-200'}`}>
-                  {isSelected ? 'Active' : 'Choose'}
+                  {isSelected ? 'Active' : selectedDomainIds.length >= 3 ? 'Locked' : 'Choose'}
                 </span>
               </div>
             </div>
@@ -177,29 +182,57 @@ export const DomainStep: React.FC<DomainStepProps> = ({
         </div>
       )}
 
+      {/* Selected Domains Summary */}
+      {selectedDomainObjs.length > 0 && (
+        <div className="mt-4 p-4 rounded-2xl bg-slate-900/90 border border-slate-800">
+          <span className="text-xs font-mono uppercase tracking-wider text-slate-400 block mb-2">
+            Selected Specializations ({selectedDomainIds.length}/3):
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {selectedDomainObjs.map((d) => (
+              <span key={d.id} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-950/60 border border-indigo-800/50 text-xs text-indigo-300">
+                <CheckCircle2 className="w-3 h-3" />
+                {d.name}
+              </span>
+            ))}
+          </div>
+          {selectedDomainIds.length >= 3 && (
+            <p className="text-xs text-amber-400/80 mt-2">
+              Maximum of 3 specializations selected. Deselect one to choose a different specialization.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Action Footer */}
-      <div className="mt-10 p-5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="mt-6 p-5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
           <span className="text-xs font-mono uppercase tracking-wider text-slate-400 block">
-            Selected Domain Specialization:
+            {selectedDomainIds.length} Specialization{selectedDomainIds.length !== 1 ? 's' : ''} Selected:
           </span>
-          {selectedDomainObj ? (
-            <p className="text-base font-bold text-white mt-0.5">
-              {currentSkill?.name} <span className="text-slate-600">→</span> <span className="text-indigo-400">{selectedDomainObj.name}</span>
+          {selectedDomainIds.length > 0 ? (
+            <p className="text-sm font-bold text-white mt-0.5">
+              {currentSkill?.name} <span className="text-slate-600">→</span>{' '}
+              {selectedDomainObjs.map((d, i) => (
+                <span key={d.id}>
+                  {i > 0 && <span className="text-slate-500">, </span>}
+                  <span className="text-indigo-400">{d.name}</span>
+                </span>
+              ))}
             </p>
           ) : (
             <p className="text-xs text-amber-400/90 mt-0.5">
-              Please choose 1 specialization above to view matching jobs.
+              Please choose at least 1 specialization above to view matching jobs.
             </p>
           )}
         </div>
 
         <button
           onClick={onContinue}
-          disabled={!selectedDomainId}
+          disabled={selectedDomainIds.length === 0}
           className="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all cursor-pointer disabled:cursor-not-allowed hover:translate-x-0.5"
         >
-          <span>Continue to Salary Expectation</span>
+          <span>View Matching Jobs</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>

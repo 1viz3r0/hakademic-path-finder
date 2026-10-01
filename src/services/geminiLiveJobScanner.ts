@@ -33,7 +33,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) matching this TypeSc
     "postedDate": "Today (just now)",
     "postedDaysAgo": 0,
     "applicationDeadline": "within 15-30 days",
-    "source": "LinkedIn" | "Internshala" | "Naukri" | "Indeed" | "Unstop" | "Wellfound" | "Official Portal",
+    "source": "Any job platform name (e.g. LinkedIn, Naukri, Indeed, Internshala, Wellfound, Unstop, Company Portal, etc.)",
     "applyUrl": "Real standard job search or portal URL for this role",
     "isVerified": true,
     "description": "2-3 concise sentences describing what this role entails.",

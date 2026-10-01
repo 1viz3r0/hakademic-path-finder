@@ -8,7 +8,7 @@ export interface PlatformSearchUrlOptions {
   education?: string;
 }
 
-export function buildPlatformSearchUrl(platform: JobSource, options: PlatformSearchUrlOptions): string {
+export function buildPlatformSearchUrl(platform: string, options: PlatformSearchUrlOptions): string {
   const queryTerms = [options.domainTitle, options.location !== 'All Locations' ? options.location : '']
     .filter(Boolean)
     .join(' ');
@@ -34,7 +34,7 @@ export function buildPlatformSearchUrl(platform: JobSource, options: PlatformSea
   }
 }
 
-export function getSourceColor(source: JobSource): { bg: string; text: string; border: string } {
+export function getSourceColor(source: string): { bg: string; text: string; border: string } {
   switch (source) {
     case 'LinkedIn':
       return { bg: 'bg-blue-950/40', text: 'text-blue-400', border: 'border-blue-800/40' };
@@ -49,7 +49,8 @@ export function getSourceColor(source: JobSource): { bg: string; text: string; b
     case 'Wellfound':
       return { bg: 'bg-emerald-950/40', text: 'text-emerald-400', border: 'border-emerald-800/40' };
     case 'Official Portal':
-    default:
       return { bg: 'bg-purple-950/40', text: 'text-purple-400', border: 'border-purple-800/40' };
+    default:
+      return { bg: 'bg-slate-950/40', text: 'text-slate-400', border: 'border-slate-800/40' };
   }
 }

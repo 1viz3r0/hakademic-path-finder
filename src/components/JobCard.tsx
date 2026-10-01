@@ -17,15 +17,13 @@ import {
 import { JobOpportunity } from '../types';
 import { getSourceColor } from '../services/jobPlatformLinks';
 import { TECHNICAL_SKILLS } from '../data/careerData';
-import { parseSalary } from '../utils/salaryUtils';
 
 interface JobCardProps {
   job: JobOpportunity;
   onOpenDetails: (job: JobOpportunity) => void;
-  expectedSalaryId?: string | null;
 }
 
-export const JobCard: React.FC<JobCardProps> = ({ job, onOpenDetails, expectedSalaryId }) => {
+export const JobCard: React.FC<JobCardProps> = ({ job, onOpenDetails }) => {
   const sourceStyle = getSourceColor(job.source);
 
   // Derive Technical Skill name & Specialization/Domain name
@@ -34,8 +32,8 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onOpenDetails, expectedSa
   const domainObj = skillObj?.domains.find((d) => d.id === job.domainId);
   const specializationName = domainObj?.name || (job.domainId ? job.domainId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Specialized Track');
 
-  // Parse salary disclosure
-  const parsedSalary = parseSalary(job.salary);
+  // Get salary display
+  const salaryDisplay = job.salary || 'Salary not disclosed';
 
   const getPostedBadge = (days: number, postedText: string) => {
     if (days === 0) {
@@ -106,40 +104,25 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onOpenDetails, expectedSa
           </div>
         </div>
 
-        {/* Prominent Salary / Package (LPA) Display */}
+        {/* Salary / Package (LPA) Display */}
         <div className="mt-3.5 p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${
-              parsedSalary.isDisclosed ? 'bg-emerald-950 border border-emerald-800/60 text-emerald-400' : 'bg-slate-800 text-slate-500'
-            }`}>
+            <div className="w-6 h-6 rounded-md bg-slate-800 border border-slate-700 flex items-center justify-center text-xs text-emerald-400">
               <IndianRupee className="w-3.5 h-3.5" />
             </div>
             <div>
               <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 block">
-                Salary / Package (LPA)
+                Salary / Package
               </span>
-              {parsedSalary.isDisclosed ? (
-                <span className="text-sm font-bold text-emerald-400 font-mono">
-                  {parsedSalary.formattedDisplay}
-                </span>
-              ) : (
-                <span className="text-xs font-medium text-slate-400 italic">
-                  Salary not disclosed
-                </span>
-              )}
+              <span className="text-sm font-bold text-emerald-400 font-mono">
+                {salaryDisplay}
+              </span>
             </div>
           </div>
 
-          {parsedSalary.isDisclosed ? (
-            <span className="text-[10px] font-mono text-emerald-500/90 bg-emerald-950/50 border border-emerald-900/60 px-2 py-0.5 rounded">
-              Advertised Package
-            </span>
-          ) : (
-            <span className="text-[10px] font-mono text-slate-500 flex items-center gap-1" title="Salary not publicly disclosed by employer">
-              <Info className="w-3 h-3 text-slate-500" />
-              <span>Not Disclosed</span>
-            </span>
-          )}
+          <span className="text-[10px] font-mono text-emerald-500/90 bg-emerald-950/50 border border-emerald-900/60 px-2 py-0.5 rounded">
+            {job.salary ? 'Advertised Package' : 'Not Disclosed'}
+          </span>
         </div>
 
         {/* Location, Work Mode & Job Type */}

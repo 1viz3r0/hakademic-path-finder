@@ -40,14 +40,7 @@ export type WorkMode = 'All' | 'Remote' | 'Hybrid' | 'On-site';
 export type ExperienceRange = 'All' | 'Fresher (0-1 yr)' | '1-3 Years' | '3-5 Years' | '5+ Years';
 export type PostedTimeFilter = 'all' | 'today' | '3days' | '7days' | '30days';
 
-export type JobSource =
-  | 'LinkedIn'
-  | 'Internshala'
-  | 'Naukri'
-  | 'Indeed'
-  | 'Unstop'
-  | 'Wellfound'
-  | 'Official Portal';
+export type JobSource = string;
 
 export interface JobOpportunity {
   id: string;
@@ -76,34 +69,14 @@ export interface JobOpportunity {
   openingsCount?: number;
 }
 
-export type FlowStep = 'age' | 'education' | 'degree' | 'skill' | 'domain' | 'salary' | 'jobs';
-
-export type ExpectedSalaryRange =
-  | 'below_2_lpa'
-  | '2_to_3_lpa'
-  | '3_to_5_lpa'
-  | '5_to_7_lpa'
-  | '7_to_10_lpa'
-  | '10_to_15_lpa'
-  | '15_to_20_lpa'
-  | '20_plus_lpa';
-
-export interface SalaryOption {
-  id: ExpectedSalaryRange;
-  label: string;
-  minLpa: number;
-  maxLpa: number;
-  description: string;
-  badge?: string;
-}
+export type FlowStep = 'age' | 'education' | 'degree' | 'skill' | 'domain' | 'jobs';
 
 export interface UserCareerProfile {
   age: number | null;
   education: EducationLevel | null;
   degree: string | null;
   technicalSkill: TechnicalSkillId | null;
-  domain: string | null;
-  expectedSalary: ExpectedSalaryRange | null;
+  domain: string | string[] | null;
   experience: ExperienceRange;
   preferredLocation: string;
   workMode: WorkMode;

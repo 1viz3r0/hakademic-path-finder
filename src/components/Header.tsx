@@ -40,7 +40,9 @@ export const Header: React.FC<HeaderProps> = ({ profile, onReset, activeStepName
               {profile.domain && (
                 <>
                   <span className="text-slate-600">/</span>
-                  <span className="text-indigo-300 font-medium truncate max-w-[150px]">{profile.domain}</span>
+                  <span className="text-indigo-300 font-medium truncate max-w-[200px]">
+                    {Array.isArray(profile.domain) ? profile.domain.join(', ') : profile.domain}
+                  </span>
                 </>
               )}
             </div>
